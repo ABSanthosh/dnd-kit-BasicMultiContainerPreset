@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import {
   arrayMove,
+  arraySwap,
   horizontalListSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
@@ -30,6 +31,7 @@ export default function Home() {
   const [duplicateData, setDuplicateData] = useState(null);
   const [dummyBoardData, setDummyBoardData] = useState(boardData);
   const [containers, setContainers] = useState(boardData.boardPanels);
+
   const addData = (index) => {
     const newBoard = boardData;
     newBoard.boardPanels[index].panelItems.push({
@@ -214,110 +216,93 @@ export default function Home() {
   }
 
   return (
-    <>
-      <pre
-        style={{
-          position: "fixed",
-          top: "0",
-          right: "0",
-          borderRadius: "6px",
-          backgroundColor: "white",
-          padding: "10px",
-          fontFamily: "code",
-          maxHeight: "100vh",
-          overflowY: "scroll",
-          minWidth: "300px",
-          zIndex: "9999",
-        }}
-      >
-        {JSON.stringify(dummyBoardData.boardPanels, null, 2)}
-      </pre>
-      <DndContext
-        sensors={sensors}
-        onDragStart={({ active }) => {
-          setActiveId(active.id);
-          setDuplicateData(boardData);
-        }}
-        onDragOver={({ active, over }) => {
-          handleDragOver({ active, over });
-        }}
-        onDragEnd={handleDragEnd}
-        onDragCancel={onDragCancel}
-      >
-        <div className="App">
-          <SortableContext
-            items={[...containers]}
-            strategy={horizontalListSortingStrategy}
-          >
-            {containers.map((panel, panelIndex) => (
-              <Panel
-                key={panelIndex}
-                panelIndex={panelIndex}
-                panel={panel}
-                addData={addData}
+    <DndContext
+      sensors={sensors}
+      onDragStart={({ active }) => {
+        setActiveId(active.id);
+        setDuplicateData(boardData);
+      }}
+      onDragOver={({ active, over }) => {}}
+      onDragEnd={({ active, over }) => {
+        const overId = over?.id;
+        const activeId = active?.id;
+
+       
+
+        if (isPanelId(activeId)) {
+          setBoardData((prev) => {
+            const activeContainer = findContainer(activeId);
+            const overContainer = findContainer(overId);
+
+            const activeContainerIndex = getIndex(activeContainer.id);
+            const overContainerIndex = getIndex(overContainer.id);
+            const updatedBoardPanels = arraySwap(
+              prev.boardPanels,
+              activeContainerIndex,
+              overContainerIndex
+            );
+            return { ...prev, boardPanels: updatedBoardPanels };
+          });
+        }
+      }}
+      onDragCancel={onDragCancel}
+    >
+      <div className="App">
+        <SortableContext
+          items={[...containers]}
+          strategy={horizontalListSortingStrategy}
+        >
+          {boardData.boardPanels.map((panel, panelIndex) => (
+            <Panel
+              key={panelIndex}
+              panelIndex={panelIndex}
+              panel={panel}
+              addData={addData}
+            >
+              <SortableContext
+                items={[...boardData.boardPanels[panelIndex].panelItems]}
+                strategy={verticalListSortingStrategy}
               >
-                <SortableContext
-                  items={[...boardData.boardPanels[panelIndex].panelItems]}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {boardData.boardPanels[panelIndex].panelItems.map(
-                    (card, cardIndex) => (
-                      <Card
-                        key={cardIndex}
-                        cardIndex={cardIndex}
-                        card={card}
-                        panelId={panel.id}
-                        panelIndex={panelIndex}
-                        removeCard={removeCard}
-                        getIndex={getIndex}
-                      />
-                    )
-                  )}
-                </SortableContext>
-              </Panel>
-            ))}
-          </SortableContext>
-        </div>
-        {createPortal(
-          <DragOverlay
-            adjustScale={false}
-            dropAnimation={{
-              ...defaultDropAnimation,
-              dragSourceOpacity: 0.5,
-            }}
-          >
-            {activeId
-              ? selectedBoard.boardPanels
-                  .map((item) => item.id)
-                  .includes(activeId)
-                ? renderContainerDragOverlay(activeId)
-                : renderSortableItemDragOverlay(activeId)
-              : null}
-          </DragOverlay>,
-          document.body
-        )}
-      </DndContext>
-    </>
+                {boardData.boardPanels[panelIndex].panelItems.map(
+                  (card, cardIndex) => (
+                    <Card
+                      key={cardIndex}
+                      cardIndex={cardIndex}
+                      card={card}
+                      panelId={panel.id}
+                      panelIndex={panelIndex}
+                      removeCard={removeCard}
+                      getIndex={getIndex}
+                    />
+                  )
+                )}
+              </SortableContext>
+            </Panel>
+          ))}
+        </SortableContext>
+      </div>
+      {createPortal(
+        <DragOverlay
+          adjustScale={false}
+          dropAnimation={{
+            ...defaultDropAnimation,
+            dragSourceOpacity: 0.5,
+          }}
+        >
+          {activeId
+            ? selectedBoard.boardPanels
+                .map((item) => item.id)
+                .includes(activeId)
+              ? renderContainerDragOverlay(activeId)
+              : renderSortableItemDragOverlay(activeId)
+            : null}
+        </DragOverlay>,
+        document.body
+      )}
+    </DndContext>
   );
 
   function handleDragEnd({ active, over }) {
-    if (active.id in containers.map((item) => item.id) && over?.id) {
-      setContainers((prev) => {
-        const activeIndex = prev.findIndex((item) => item.id === active.id);
-        const overIndex = prev.findIndex((item) => item.id === over.id);
-
-        const updatedContainers = [
-          ...prev.slice(0, overIndex),
-          prev[activeIndex],
-          ...prev.slice(overIndex, activeIndex),
-          prev[activeIndex],
-          ...prev.slice(activeIndex + 1),
-        ];
-
-        return updatedContainers;
-      });
-    }
-
     const activeContainer = findContainer(active.id);
 
     if (!activeContainer) {

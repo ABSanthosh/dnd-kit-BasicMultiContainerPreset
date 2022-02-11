@@ -18,6 +18,7 @@ export default function Panel({ panelIndex, panel, addData, children }) {
     transform,
   } = useSortable({
     id: panel.id,
+    animateLayoutChanges,
   });
   const items = panel.panelItems.map((item) => item.id);
   const isOverContainer = over
