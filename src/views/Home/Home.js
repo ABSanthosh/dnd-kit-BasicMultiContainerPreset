@@ -14,7 +14,6 @@ import {
 } from "@dnd-kit/core";
 import {
   arrayMove,
-  arraySwap,
   horizontalListSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
@@ -63,7 +62,7 @@ export default function Home() {
   );
 
   function findContainer(id) {
-    const preResult = selectedBoard.boardPanels.find((panel) => {
+    const preResult = boardData.boardPanels.find((panel) => {
       return panel.panelItems.find((item) => {
         return item.id === id;
       });
@@ -72,7 +71,7 @@ export default function Home() {
     if (preResult) {
       return preResult;
     } else {
-      return selectedBoard.boardPanels.find((panel) => {
+      return boardData.boardPanels.find((panel) => {
         return panel.id === id;
       });
     }
@@ -80,11 +79,11 @@ export default function Home() {
 
   const getIndex = (id) => {
     const panel = findContainer(id);
-    return selectedBoard.boardPanels.indexOf(panel);
+    return boardData.boardPanels.indexOf(panel);
   };
 
   function renderContainerDragOverlay(id) {
-    const panel = selectedBoard.boardPanels[getIndex(id)];
+    const panel = boardData.boardPanels[getIndex(id)];
     return (
       <Panel key={panel.id} panelIndex={getIndex(id)} panel={panel}>
         {panel.panelItems.map((card, cardIndex) => (
@@ -103,7 +102,7 @@ export default function Home() {
   }
 
   function renderSortableItemDragOverlay(id) {
-    const cardParent = selectedBoard.boardPanels.find((panel) => {
+    const cardParent = boardData.boardPanels.find((panel) => {
       return panel.panelItems.find((item) => {
         return item.id === id;
       });
@@ -124,93 +123,10 @@ export default function Home() {
   }
 
   function isPanelId(id) {
-    const result = selectedBoard.boardPanels.find((panel) => {
+    const result = boardData.boardPanels.find((panel) => {
       return panel.id === id;
     });
     return result ? true : false;
-  }
-
-  function handleDragOver({ active, over }) {
-    // console.log(over?.id);
-    const overId = over?.id;
-
-    if (!over?.id) {
-      return;
-    }
-    // console.log(overId);
-
-    // Find the containers
-    const activeContainer = findContainer(active.id);
-    const overContainer = findContainer(overId);
-
-    if (!activeContainer || !overContainer) {
-      return;
-    }
-
-    if (activeContainer !== overContainer) {
-      setBoardData((prev) => {
-        // console.log("prev");
-        const activeItems = boardData.boardPanels.find((panel) => {
-          return panel.id === activeContainer.id;
-        });
-
-        const overItems = boardData.boardPanels.find((panel) => {
-          return panel.id === overContainer.id;
-        });
-
-        const activeIndex = activeItems.panelItems.findIndex((item) => {
-          return item.id === active.id;
-        });
-        const overIndex = overItems.panelItems.findIndex((item) => {
-          return item.id === over.id;
-        });
-
-        let newIndex;
-
-        if (isPanelId(over.id)) {
-          newIndex = overItems.panelItems.length + 1;
-        } else {
-          const isBelowOverItem =
-            over &&
-            active.rect.current.translated &&
-            active.rect.current.translated.top >
-              over.rect.top + over.rect.height;
-
-          const modifier = isBelowOverItem ? 1 : 0;
-
-          newIndex =
-            overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
-        }
-
-        const updatedOverPanelItems = [
-          ...prev.boardPanels[getIndex(overContainer.id)].panelItems.slice(
-            0,
-            newIndex
-          ),
-          prev.boardPanels[getIndex(activeContainer.id)].panelItems[
-            activeIndex
-          ],
-          ...prev.boardPanels[getIndex(overContainer.id)].panelItems.slice(
-            newIndex,
-            prev.boardPanels[getIndex(overContainer.id)].panelItems.length
-          ),
-        ];
-
-        const updatedActivePanelItems = prev.boardPanels[
-          getIndex(activeContainer.id)
-        ].panelItems.filter((item) => item.id !== active.id);
-
-        // console.log(updatedActivePanelItems, updatedOverPanelItems);
-
-        prev.boardPanels[getIndex(overContainer.id)].panelItems =
-          updatedOverPanelItems;
-        prev.boardPanels[getIndex(activeContainer.id)].panelItems =
-          updatedActivePanelItems;
-
-        // setDummyBoardData({ ...prev });
-        return { ...prev };
-      });
-    }
   }
 
   return (
@@ -220,7 +136,20 @@ export default function Home() {
         setActiveId(active.id);
         setDuplicateData(boardData);
       }}
-      onDragOver={({ active, over }) => {}}
+      onDragOver={({ active, over }) => {
+        const overId = over?.id;
+        const activeId = active?.id;
+        console.log(overId);
+        if (
+          !isPanelId(overId) &&
+          !isPanelId(activeId) &&
+          activeId !== overId &&
+          !findContainer(activeId)
+            .panelItems.map((items) => items.id)
+            .includes(overId)
+        ) {
+        }
+      }}
       onDragEnd={({ active, over }) => {
         const overId = over?.id;
         const activeId = active?.id;
@@ -332,7 +261,7 @@ export default function Home() {
 
             const activeContainerIndex = getIndex(activeContainer.id);
             const overContainerIndex = getIndex(overContainer.id);
-            const updatedBoardPanels = arraySwap(
+            const updatedBoardPanels = arrayMove(
               prev.boardPanels,
               activeContainerIndex,
               overContainerIndex
@@ -386,9 +315,7 @@ export default function Home() {
           }}
         >
           {activeId
-            ? selectedBoard.boardPanels
-                .map((item) => item.id)
-                .includes(activeId)
+            ? boardData.boardPanels.map((item) => item.id).includes(activeId)
               ? renderContainerDragOverlay(activeId)
               : renderSortableItemDragOverlay(activeId)
             : null}
