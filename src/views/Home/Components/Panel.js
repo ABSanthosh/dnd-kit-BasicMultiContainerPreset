@@ -1,10 +1,7 @@
-import { defaultAnimateLayoutChanges, useSortable } from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
 import DragHandle from "./DragHandle";
 
 // aka DroppableContainer
-
-const animateLayoutChanges = (args) =>
-  args.isSorting || args.wasDragging ? defaultAnimateLayoutChanges(args) : true;
 
 export default function Panel({ panelIndex, panel, addData, children }) {
   const {
@@ -18,7 +15,6 @@ export default function Panel({ panelIndex, panel, addData, children }) {
     transform,
   } = useSortable({
     id: panel.id,
-    animateLayoutChanges,
   });
   const items = panel.panelItems.map((item) => item.id);
   const isOverContainer = over

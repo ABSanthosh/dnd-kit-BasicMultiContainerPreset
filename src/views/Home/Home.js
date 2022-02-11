@@ -29,8 +29,6 @@ export default function Home() {
   const [boardData, setBoardData] = useState(selectedBoard);
   const [activeId, setActiveId] = useState(null);
   const [duplicateData, setDuplicateData] = useState(null);
-  const [dummyBoardData, setDummyBoardData] = useState(boardData);
-  const [containers, setContainers] = useState(boardData.boardPanels);
 
   const addData = (index) => {
     const newBoard = boardData;
@@ -347,7 +345,7 @@ export default function Home() {
     >
       <div className="App">
         <SortableContext
-          items={boardData.boardPanels.map((panel) => panel.panelItems)}
+          items={[...boardData.boardPanels]}
           strategy={horizontalListSortingStrategy}
         >
           {boardData.boardPanels.map((panel, panelIndex) => (
@@ -358,7 +356,7 @@ export default function Home() {
               addData={addData}
             >
               <SortableContext
-                items={[...boardData.boardPanels[panelIndex].panelItems]}
+                items={[...panel.panelItems]}
                 strategy={verticalListSortingStrategy}
               >
                 {boardData.boardPanels[panelIndex].panelItems.map(
@@ -451,7 +449,6 @@ export default function Home() {
   function onDragCancel() {
     if (duplicateData) {
       setBoardData({ ...duplicateData });
-      setDummyBoardData({ ...duplicateData });
     }
     setActiveId(null);
     setDuplicateData(null);
