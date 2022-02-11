@@ -227,7 +227,70 @@ export default function Home() {
         const overId = over?.id;
         const activeId = active?.id;
 
-       
+        if (
+          !isPanelId(activeId) &&
+          findContainer(activeId) !== findContainer(overId)
+        ) {
+          setBoardData((prev) => {
+            const activeContainer = findContainer(activeId);
+            const overContainer = findContainer(overId);
+
+            const activeIndex = activeContainer.panelItems.findIndex((item) => {
+              return item.id === activeId;
+            });
+
+            const overIndex = overContainer.panelItems.findIndex((item) => {
+              return item.id === overId;
+            });
+
+            let newIndex;
+
+            if (isPanelId(overId)) {
+              newIndex = overContainer.panelItems.length;
+            } else {
+              const isBelowOverItem =
+                over &&
+                active.rect.current.translated &&
+                active.rect.current.translated.top >
+                  over.rect.top + over.rect.height;
+
+              const modifier = isBelowOverItem ? 1 : 0;
+
+              newIndex =
+                overIndex >= 0
+                  ? overIndex + modifier
+                  : overContainer.panelItems.length + 1;
+            }
+
+            const updatedOverPanelItems = [
+              ...prev.boardPanels[getIndex(overContainer.id)].panelItems.slice(
+                0,
+                newIndex
+              ),
+              prev.boardPanels[getIndex(activeContainer.id)].panelItems[
+                activeIndex
+              ],
+              ...prev.boardPanels[getIndex(overContainer.id)].panelItems.slice(
+                newIndex,
+                prev.boardPanels[getIndex(overContainer.id)].panelItems.length
+              ),
+            ];
+
+            const updatedActivePanelItems = prev.boardPanels[
+              getIndex(activeContainer.id)
+            ].panelItems.filter((item) => item.id !== active.id);
+
+            prev.boardPanels[getIndex(overContainer.id)].panelItems = [
+              ...updatedOverPanelItems,
+            ];
+
+            prev.boardPanels[getIndex(activeContainer.id)].panelItems = [
+              ...updatedActivePanelItems,
+            ];
+
+            return { ...prev };
+          });
+        }
 
         if (isPanelId(activeId)) {
           setBoardData((prev) => {
