@@ -227,6 +227,40 @@ export default function Home() {
         const overId = over?.id;
         const activeId = active?.id;
 
+        // Only for items sorting inside a panel
+        if (
+          findContainer(activeId) === findContainer(overId) &&
+          !isPanelId(overId) &&
+          !isPanelId(activeId)
+        ) {
+          setBoardData((prev) => {
+            const activeContainer = findContainer(activeId);
+            const activeItemIndex = activeContainer.panelItems.findIndex(
+              (item) => {
+                return item.id === active.id;
+              }
+            );
+
+            const overItemIndex = activeContainer.panelItems.findIndex(
+              (item) => {
+                return item.id === over.id;
+              }
+            );
+
+            prev.boardPanels[getIndex(activeContainer.id)].panelItems =
+              arrayMove(
+                prev.boardPanels[getIndex(activeContainer.id)].panelItems,
+                activeItemIndex,
+                overItemIndex
+              );
+
+            return {
+              ...prev,
+            };
+          });
+        }
+
+        // only for items between panels
         if (
           !isPanelId(activeId) &&
           findContainer(activeId) !== findContainer(overId)
@@ -292,6 +326,7 @@ export default function Home() {
           });
         }
 
+        // Only for panels sorting
         if (isPanelId(activeId)) {
           setBoardData((prev) => {
             const activeContainer = findContainer(activeId);
@@ -312,7 +347,7 @@ export default function Home() {
     >
       <div className="App">
         <SortableContext
-          items={[...containers]}
+          items={boardData.boardPanels.map((panel) => panel.panelItems)}
           strategy={horizontalListSortingStrategy}
         >
           {boardData.boardPanels.map((panel, panelIndex) => (
