@@ -190,6 +190,8 @@ export default function Home() {
         // only for items between panels
         if (
           !isPanelId(activeId) &&
+          findContainer(overId) &&
+          findContainer(activeId) &&
           findContainer(activeId) !== findContainer(overId)
         ) {
           setBoardData((prev) => {
